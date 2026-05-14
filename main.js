@@ -7,6 +7,7 @@
 
 import { processImageToLandscape16x9, formatFileSize, revokePreviewUrl } from './lib/image.js';
 import { generatePDF, generateFilename, downloadPDF } from './lib/pdf.js';
+import { APP_VERSION } from './config/version.js';
 
 // ========================================
 // Application State
@@ -90,6 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
   addActivity(1); // Activity 2
 
   updateActivityCount();
+
+  document.getElementById('appVersion').textContent = `v${APP_VERSION}`;
 });
 
 // ========================================
@@ -1432,6 +1435,7 @@ function showErrorWithDebugDownload(error) {
 
 function _buildDebugReport(error) {
   return {
+    appVersion: APP_VERSION,
     timestamp: new Date().toISOString(),
     userAgent: navigator.userAgent,
     error: {

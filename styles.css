@@ -1040,3 +1040,11 @@ textarea.auto-expand {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* App Version Footer */
+.app-version {
+  text-align: center;
+  padding: var(--spacing-sm) 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
