@@ -1348,7 +1348,7 @@ async function generateReport() {
   } catch (error) {
     console.error('PDF generation failed:', error);
     overlay.style.display = 'none';
-    alert('Failed to generate PDF. Please try again.\n\nError: ' + error.message);
+    showErrorWithDebugDownload(error);
   }
 }
 
@@ -1400,6 +1400,84 @@ function markValid(elementId) {
   if (el) {
     el.classList.remove('invalid');
   }
+}
+
+function showErrorWithDebugDownload(error) {
+  const overlay = document.createElement('div');
+  overlay.className = 'progress-overlay';
+  overlay.style.display = 'flex';
+
+  const modal = document.createElement('div');
+  modal.className = 'progress-modal error-modal';
+  modal.innerHTML = `
+    <p class="error-modal-title">Failed to generate PDF</p>
+    <p class="error-modal-message">${escapeHtml(error.message)}</p>
+    <p class="error-modal-hint">Please download the debug file and share it so we can investigate the issue.</p>
+    <div class="error-modal-actions">
+      <button type="button" class="btn-primary btn-download-debug">Download Debug Info</button>
+      <button type="button" class="btn-secondary btn-close-error">Close</button>
+    </div>
+  `;
+
+  modal.querySelector('.btn-download-debug').addEventListener('click', () => {
+    downloadDebugInfo(error);
+  });
+  modal.querySelector('.btn-close-error').addEventListener('click', () => {
+    overlay.remove();
+  });
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function _buildDebugReport(error) {
+  return {
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    error: {
+      message: error.message,
+      stack: error.stack
+    },
+    report: {
+      schoolYear: report.schoolYear,
+      instructorName: report.instructorName,
+      schoolType: report.schoolType,
+      headerPhoto: report.headerPhoto
+        ? { width: report.headerPhoto.width, height: report.headerPhoto.height, bytes: report.headerPhoto.bytes }
+        : null,
+      distribution: report.distribution,
+      activities: report.activities.map(a => ({
+        typeIndex: a.typeIndex,
+        date: a.date,
+        location: a.location,
+        participants: a.participants,
+        description: a.description,
+        impact: a.impact,
+        medium: a.medium,
+        mediumOther: a.mediumOther,
+        foreignCountry: a.foreignCountry,
+        foreignSchoolName: a.foreignSchoolName,
+        foreignSchoolAddress: a.foreignSchoolAddress,
+        photoCount: a.photos.length,
+        photos: a.photos.map(p => ({ width: p.width, height: p.height, bytes: p.bytes }))
+      }))
+    }
+  };
+}
+
+function downloadDebugInfo(error) {
+  const debugData = _buildDebugReport(error);
+  const json = JSON.stringify(debugData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `debug_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 function escapeHtml(str) {
